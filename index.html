@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Web3 作業 - 10173183</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f7f6; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; }
+        button { background-color: #f0ad4e; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+        button:hover { background-color: #ec971f; }
+        #result { margin-top: 20px; font-size: 20px; color: #2c3e50; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Web3 智能合約互動</h1>
+        <p>學號：10173183</p>
+        <p>合約：0x64571A1A8116C97664B99903730248408f667345</p>
+        
+        <button onclick="loadMessage()">讀取合約訊息</button>
+        <div id="result">尚未讀取</div>
+    </div>
+
+    <script>
+        const contractAddress = "0x64571A1A8116C97664B99903730248408f667345";
+        const abi = [{"inputs":[],"name":"message","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
+
+        async function loadMessage() {
+            if (window.ethereum) {
+                const web3 = new Web3(window.ethereum);
+                try {
+                    const contract = new web3.eth.Contract(abi, contractAddress);
+                    const message = await contract.methods.message().call();
+                    document.getElementById('result').innerText = "合約內容：" + message;
+                } catch (error) {
+                    console.error(error);
+                    alert("讀取失敗，請確認是否連上 Sepolia 網路");
+                }
+            } else {
+                alert("請安裝 MetaMask！");
+            }
+        }
+    </script>
+</body>
+</html>
