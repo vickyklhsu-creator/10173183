@@ -28,28 +28,20 @@
                 try {
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
                     const web3 = new Web3(window.ethereum);
-                    
-                    resultDiv.innerText = "正在讀取...";
+                    resultDiv.innerText = "正在讀取區塊鏈原始資料...";
 
-                    // 使用最原始的呼叫方式，直接讀取 message() 的資料位置
-                    const response = await web3.eth.call({
+                    // 使用底層 call 直接抓取 message() 函式的回傳值
+                    const rawData = await web3.eth.call({
                         to: contractAddress,
-                        data: "0xe2113709" // 這是 message() 函式的開頭編碼
+                        data: "0xe2113709" // message() 的函式選擇器
                     });
 
-                    // 將十六進位轉回文字
-                    const decoded = web3.utils.hexToAscii(response).replace(/\u0000/g, '');
-                    
-                    if (decoded.includes("10173183")) {
-                        resultDiv.innerText = "成功讀取！合約訊息為：10173183";
-                    } else {
-                        // 如果合約回傳的是編碼過的字串，這行會捕捉到
-                        const cleanMsg = web3.eth.abi.decodeParameter('string', response);
-                        resultDiv.innerText = "成功讀取！合約訊息為：" + cleanMsg;
-                    }
+                    // 將原始資料轉為字串並過濾掉雜訊
+                    const cleanMsg = web3.eth.abi.decodeParameter('string', rawData);
+                    resultDiv.innerText = "成功讀取！合約訊息為：" + cleanMsg;
                 } catch (error) {
                     console.error(error);
-                    resultDiv.innerText = "讀取失敗，請確認 MetaMask 已切換至 Sepolia 網路";
+                    resultDiv.innerText = "讀取失敗，請確認已切換至 Sepolia 網路";
                 }
             } else {
                 alert("請安裝 MetaMask！");
