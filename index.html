@@ -21,7 +21,23 @@
 
     <script>
         const contractAddress = "0x64571A1A8116C97664B99903730248408f667345";
-        const abi = [{"inputs":[],"name":"message","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"}];
+        // 請將這段貼上，替換掉原本的 const abi = [...]
+const abi = [
+    {
+        "inputs": [],
+        "name": "message",
+        "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{"internalType": "string", "name": "_newMessage", "type": "string"}],
+        "name": "updateMessage",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+];
 
         async function loadMessage() {
             const resultDiv = document.getElementById('result');
