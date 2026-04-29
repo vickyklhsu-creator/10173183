@@ -2,75 +2,72 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web3 作業 - 10173183</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <style>
-        body { font-family: 'Microsoft JhengHei', sans-serif; text-align: center; padding: 50px; background-color: #f4f7f6; }
-        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: inline-block; max-width: 500px; width: 100%; }
-        button { background-color: #f0ad4e; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 10px; cursor: pointer; margin-top: 20px; font-weight: bold; }
-        #result { margin-top: 25px; padding: 15px; border-radius: 10px; font-size: 18px; font-weight: bold; min-height: 50px; white-space: pre-wrap; }
-        .error { color: #e74c3c; background-color: #fdeaea; }
-        .success { color: #27ae60; background-color: #eafaf1; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f7f6; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; width: 90%; max-width: 450px; }
+        button { background-color: #f0ad4e; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 8px; cursor: pointer; margin-top: 20px; font-weight: bold; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; min-height: 40px; }
+        .error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>Web3 智能合約互動</h1>
         <p>學號：10173183</p>
-        <button onclick="main()">讀取合約訊息</button>
-        <div id="result">狀態：等待操作</div>
+        <button onclick="readFromBlockchain()">讀取合約訊息</button>
+        <div id="result">狀態：等待讀取</div>
     </div>
 
     <script>
-        async function main() {
+        async function readFromBlockchain() {
             const res = document.getElementById('result');
-            // 此地址來自截圖 231402.png，確保它是你最後一次部署的地址
-            const contractAddr = "0x6455BBB09e61a1f93E882f2c0E336b5044F67345";
+            // 這是正確的 Contract Address
+            const targetAddress = "0x6455B907530D8c94664A3aD23C27653606567345";
             
             res.className = "";
-            res.innerText = "檢查中...";
+            res.innerText = "正在連線錢包...";
 
-            if (window.ethereum) {
+            if (typeof window.ethereum !== 'undefined') {
                 try {
-                    // 1. 強制請求連線
+                    // 1. 確保連線到 Sepolia
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
                     const web3 = new Web3(window.ethereum);
-
-                    // 2. 檢查是否在 Sepolia (ChainID: 11155111)
+                    
                     const chainId = await web3.eth.getChainId();
                     if (Number(chainId) !== 11155111) {
                         res.className = "error";
-                        res.innerText = "錯誤：請將 MetaMask 切換到 Sepolia 網路！";
+                        res.innerText = "請將 MetaMask 切換至 Sepolia 網路";
                         return;
                     }
 
-                    res.innerText = "正在從 Sepolia 讀取...";
+                    res.innerText = "讀取中...";
 
-                    // 3. 呼叫 message()
-                    const rawData = await web3.eth.call({
-                        to: contractAddr,
-                        data: "0xe2113709" // message() 的函式特徵碼
+                    // 2. 執行讀取 (message() 的 selector 是 0xe2113709)
+                    const data = await web3.eth.call({
+                        to: targetAddress,
+                        data: "0xe2113709"
                     });
 
-                    // 4. 判斷回傳值是否有效
-                    if (rawData === "0x" || rawData === "0x0") {
+                    if (data === "0x") {
                         res.className = "error";
-                        res.innerText = "找不到合約內容。\n請確認合約地址正確且已部署成功。";
+                        res.innerText = "找不到合約資料，請確認地址正確。";
                         return;
                     }
 
-                    // 5. 解碼並顯示
-                    const msg = web3.eth.abi.decodeParameter('string', rawData);
+                    // 3. 解碼資料
+                    const msg = web3.eth.abi.decodeParameter('string', data);
                     res.className = "success";
-                    res.innerText = "✅ 讀取成功！\n內容：" + msg;
+                    res.innerText = "✅ 讀取成功！\n合約內容：" + msg;
 
                 } catch (e) {
                     res.className = "error";
-                    res.innerText = "發生錯誤：" + e.message;
+                    res.innerText = "失敗：" + e.message;
                 }
             } else {
-                alert("請安裝 MetaMask！");
+                alert("找不到 MetaMask，請先安裝擴充功能。");
             }
         }
     </script>
