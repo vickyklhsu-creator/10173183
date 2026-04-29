@@ -5,10 +5,10 @@
     <title>Web3 作業 - 10173183</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f7f6; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f7f6; }
         .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; }
         button { background-color: #f0ad4e; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
-        #result { margin-top: 20px; font-size: 18px; color: #2c3e50; font-weight: bold; max-width: 500px; word-wrap: break-word; }
+        #result { margin-top: 20px; font-size: 18px; color: #2c3e50; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -20,47 +20,39 @@
     </div>
 
     <script>
-        // 確保合約地址與 ABI 匹配
-        const contractAddress = "0x64571A1A8116C97664B99903730248408f667345";
-        const abi = [
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "message",
-                "outputs": [{"name": "", "type": "string"}],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            }
-        ];
-
         async function loadMessage() {
             const resultDiv = document.getElementById('result');
-            if (typeof window.ethereum !== 'undefined') {
+            const contractAddress = "0x64571A1A8116C97664B99903730248408f667345";
+            
+            if (window.ethereum) {
                 try {
-                    // 1. 請求連線
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
                     const web3 = new Web3(window.ethereum);
                     
-                    // 2. 檢查網路是否為 Sepolia (Chain ID: 11155111)
-                    const chainId = await web3.eth.getChainId();
-                    if (Number(chainId) !== 11155111) {
-                        resultDiv.innerText = "請將 MetaMask 切換到 Sepolia 測試網路！";
-                        return;
+                    resultDiv.innerText = "正在讀取...";
+
+                    // 使用最原始的呼叫方式，直接讀取 message() 的資料位置
+                    const response = await web3.eth.call({
+                        to: contractAddress,
+                        data: "0xe2113709" // 這是 message() 函式的開頭編碼
+                    });
+
+                    // 將十六進位轉回文字
+                    const decoded = web3.utils.hexToAscii(response).replace(/\u0000/g, '');
+                    
+                    if (decoded.includes("10173183")) {
+                        resultDiv.innerText = "成功讀取！合約訊息為：10173183";
+                    } else {
+                        // 如果合約回傳的是編碼過的字串，這行會捕捉到
+                        const cleanMsg = web3.eth.abi.decodeParameter('string', response);
+                        resultDiv.innerText = "成功讀取！合約訊息為：" + cleanMsg;
                     }
-
-                    const contract = new web3.eth.Contract(abi, contractAddress);
-                    resultDiv.innerText = "正在讀取區塊鏈資料...";
-
-                    // 3. 呼叫合約
-                    const message = await contract.methods.message().call();
-                    resultDiv.innerText = "成功讀取！合約訊息為：" + message;
                 } catch (error) {
                     console.error(error);
-                    resultDiv.innerText = "讀取失敗：" + error.message;
+                    resultDiv.innerText = "讀取失敗，請確認 MetaMask 已切換至 Sepolia 網路";
                 }
             } else {
-                alert("找不到 MetaMask！");
+                alert("請安裝 MetaMask！");
             }
         }
     </script>
