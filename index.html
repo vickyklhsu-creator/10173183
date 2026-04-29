@@ -8,7 +8,7 @@
         body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f4f7f6; }
         .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; }
         button { background-color: #f0ad4e; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
-        #result { margin-top: 20px; font-size: 20px; color: #2c3e50; font-weight: bold; }
+        #result { margin-top: 20px; font-size: 18px; color: #2c3e50; font-weight: bold; max-width: 500px; word-wrap: break-word; }
     </style>
 </head>
 <body>
@@ -16,46 +16,51 @@
         <h1>Web3 智能合約互動</h1>
         <p>學號：10173183</p>
         <button onclick="loadMessage()">讀取合約訊息</button>
-        <div id="result">狀態：尚未連線</div>
+        <div id="result">狀態：等待連線...</div>
     </div>
 
     <script>
+        // 確保合約地址與 ABI 匹配
         const contractAddress = "0x64571A1A8116C97664B99903730248408f667345";
-        // 請將這段貼上，替換掉原本的 const abi = [...]
-const abi = [
-    {
-        "inputs": [],
-        "name": "message",
-        "outputs": [{"internalType": "string", "name": "", "type": "string"}],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [{"internalType": "string", "name": "_newMessage", "type": "string"}],
-        "name": "updateMessage",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    }
-];
+        const abi = [
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "message",
+                "outputs": [{"name": "", "type": "string"}],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
 
         async function loadMessage() {
             const resultDiv = document.getElementById('result');
-            if (window.ethereum) {
+            if (typeof window.ethereum !== 'undefined') {
                 try {
-                    // 強制要求連線 MetaMask
+                    // 1. 請求連線
                     await window.ethereum.request({ method: 'eth_requestAccounts' });
                     const web3 = new Web3(window.ethereum);
-                    const contract = new web3.eth.Contract(abi, contractAddress);
                     
-                    resultDiv.innerText = "正在從區塊鏈讀取...";
+                    // 2. 檢查網路是否為 Sepolia (Chain ID: 11155111)
+                    const chainId = await web3.eth.getChainId();
+                    if (Number(chainId) !== 11155111) {
+                        resultDiv.innerText = "請將 MetaMask 切換到 Sepolia 測試網路！";
+                        return;
+                    }
+
+                    const contract = new web3.eth.Contract(abi, contractAddress);
+                    resultDiv.innerText = "正在讀取區塊鏈資料...";
+
+                    // 3. 呼叫合約
                     const message = await contract.methods.message().call();
-                    resultDiv.innerText = "合約內容：" + message;
+                    resultDiv.innerText = "成功讀取！合約訊息為：" + message;
                 } catch (error) {
-                    resultDiv.innerText = "錯誤：" + error.message;
+                    console.error(error);
+                    resultDiv.innerText = "讀取失敗：" + error.message;
                 }
             } else {
-                alert("找不到 MetaMask，請確認已安裝擴充功能");
+                alert("找不到 MetaMask！");
             }
         }
     </script>
