@@ -2,50 +2,78 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web3 作業 - 10173183</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f7f6; }
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; }
-        button { background-color: #f0ad4e; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
-        #result { margin-top: 20px; font-size: 18px; color: #2c3e50; font-weight: bold; }
+        body { font-family: 'Microsoft JhengHei', sans-serif; text-align: center; padding: 50px; background-color: #f4f7f6; color: #333; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: inline-block; max-width: 500px; width: 100%; }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        p { font-size: 1.1em; color: #7f8c8d; }
+        button { background-color: #f0ad4e; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 10px; cursor: pointer; transition: 0.3s; margin-top: 20px; font-weight: bold; }
+        button:hover { background-color: #ec971f; transform: translateY(-2px); }
+        #result { margin-top: 25px; padding: 15px; border-radius: 10px; font-size: 18px; color: #2c3e50; font-weight: bold; min-height: 50px; line-height: 1.5; }
+        .error { color: #e74c3c; background-color: #fdeaea; }
+        .success { color: #27ae60; background-color: #eafaf1; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>Web3 智能合約互動</h1>
         <p>學號：10173183</p>
-        <button onclick="readContract()">讀取合約訊息</button>
-        <div id="result">狀態：等待連線...</div>
+        <button onclick="interactWithContract()">讀取合約訊息</button>
+        <div id="result">狀態：等待操作...</div>
     </div>
 
     <script>
-        async function readContract() {
+        async function interactWithContract() {
             const resultDiv = document.getElementById('result');
-            // 使用截圖 231402.png 中的正確合約地址
+            // 這是根據你的截圖 231402.png 確定的正確 Sepolia 合約地址
             const contractAddress = "0x6455B907530D8c94664A3aD23C27653606567345";
             
-            if (window.ethereum) {
-                try {
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    const web3 = new Web3(window.ethereum);
-                    resultDiv.innerText = "正在讀取區塊鏈資料...";
+            // 初始化顯示
+            resultDiv.className = "";
+            resultDiv.innerText = "正在檢查 MetaMask...";
 
-                    // 使用最保險的 raw call 方式
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    // 1. 請求連線帳戶 (這會強制彈出 MetaMask 視窗)
+                    resultDiv.innerText = "請在 MetaMask 視窗點擊「連線」...";
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    
+                    const web3 = new Web3(window.ethereum);
+                    resultDiv.innerText = "連線成功！正在從區塊鏈讀取資料...";
+
+                    // 2. 直接讀取資料 (使用 eth_call 避開 ABI 解析報錯)
                     const rawData = await web3.eth.call({
                         to: contractAddress,
-                        data: "0xe2113709" // message() 的函式選擇器
+                        data: "0xe2113709" // 這是 message() 函式的 Selector
                     });
 
-                    // 嘗試解碼
-                    const message = web3.eth.abi.decodeParameter('string', rawData);
-                    resultDiv.innerText = "成功讀取！訊息為：" + message;
+                    // 3. 解碼回傳的 String
+                    if (rawData === "0x") {
+                        throw new Error("找不到合約，請確認是否已切換至 Sepolia 網路。");
+                    }
+
+                    const decodedMessage = web3.eth.abi.decodeParameter('string', rawData);
+                    
+                    // 4. 成功顯示
+                    resultDiv.className = "success";
+                    resultDiv.innerText = "讀取成功！\n合約內容：" + decodedMessage;
+
                 } catch (error) {
                     console.error(error);
-                    resultDiv.innerText = "讀取失敗，請確認已連線至 Sepolia 並使用正確地址";
+                    resultDiv.className = "error";
+                    // 處理常見錯誤訊息
+                    if (error.code === 4001) {
+                        resultDiv.innerText = "讀取失敗：你拒絕了連線請求。";
+                    } else {
+                        resultDiv.innerText = "發生錯誤：" + error.message;
+                    }
                 }
             } else {
-                alert("請安裝 MetaMask！");
+                resultDiv.className = "error";
+                resultDiv.innerText = "未安裝 MetaMask！請先安裝瀏覽器擴充功能。";
             }
         }
     </script>
